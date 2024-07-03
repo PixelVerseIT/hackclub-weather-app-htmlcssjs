@@ -229,7 +229,30 @@
                 text-align: center;
             }
         }
+
+        #geolocate-btn {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-left: 5px;
+        }
+        #geolocate-btn:hover {
+            background-color: #27ae60;
+        }
+
+        #weather-map, #temperatureChart {
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
     </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="container">
@@ -247,7 +270,11 @@
             <div class="loader-spinner"></div>
             <p>Fetching weather data...</p>
         </div>
-        <div id="weather-info"></div>
+        <div id="weather-info">
+            <div id="weather-map" style="height: 400px; width: 100%; margin-top: 20px;"></div>
+            <canvas id="temperatureChart" style="width:100%; max-width:600px; margin-top: 20px;"></canvas>
+        </div>
+        
     </div>
 
     <script>
@@ -378,8 +405,10 @@
 
             weatherInfo.innerHTML = '';
             loader.style.display = 'block';
+            
 
             const apiKey = '36466fb1f0071875a5b745561750b2e0'; // Replace with your OpenWeatherMap API key
+            const mapUrl = `https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=${apiKey}`;
             const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
             const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=metric`;
 
@@ -407,6 +436,45 @@
             } finally {
                 loader.style.display = 'none';
             }
+        }
+
+        function initMap(lat, lon) {
+            const mapContainer = document.getElementById('weather-map');
+            if (!mapContainer) {
+                console.error('Map container not found');
+                return;
+            }
+
+            const map = L.map('weather-map').setView([lat, lon], 10);
+            const apiKey = '36466fb1f0071875a5b745561750b2e0'; // Replace with your OpenWeatherMap API key
+            const mapUrl = `https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=${apiKey}`;
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            L.tileLayer(mapUrl).addTo(map);
+            L.marker([lat, lon]).addTo(map);
+        }
+
+        function createTemperatureChart(forecastData) {
+            const labels = forecastData.list.slice(0, 8).map(item => new Date(item.dt * 1000).toLocaleTimeString('en-US', { hour: 'numeric', hour12: true }));
+            const temperatures = forecastData.list.slice(0, 8).map(item => item.main.temp);
+
+            new Chart("temperatureChart", {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: temperatures,
+                        borderColor: "red",
+                        fill: false
+                    }]
+                },
+                options: {
+                    legend: {display: false},
+                    title: {
+                        display: true,
+                        text: "Temperature Forecast (Next 24 Hours)"
+                    }
+                }
+            });
         }
 
         function displayWeather(weatherData, forecastData, airQualityData) {
@@ -490,7 +558,17 @@
                 <div class="forecast">
                     ${forecastHtml}
                 </div>
+                 <div id="weather-map" style="height: 400px; width: 100%; margin-top: 20px;"></div>
+                <canvas id="temperatureChart" style="width:100%; max-width:600px; margin-top: 20px;"></canvas>
             `;
+            initMap(weatherData.coord.lat, weatherData.coord.lon);
+            createTemperatureChart(forecastData);
+
+            // Move these lines to the end of the function
+            setTimeout(() => {
+                initMap(weatherData.coord.lat, weatherData.coord.lon);
+                createTemperatureChart(forecastData);
+            }, 0);
         }
 
         function toggleTemperatureUnit() {
