@@ -238,9 +238,10 @@
         </header>
         <div class="search-container">
             <input type="text" id="city-input" placeholder="Enter city name">
-            <ul id="suggestion-list"></ul>
             <button onclick="addCity()">Add City</button>
+            <button id="geolocate-btn" type="button">Use My Location</button>
         </div>
+        <ul id="suggestion-list"></ul>
         <div id="city-list"></div>
         <div id="loader">
             <div class="loader-spinner"></div>
@@ -258,7 +259,7 @@
         let isMetric = true;
         let cities = JSON.parse(localStorage.getItem('weatherCities')) || [];
 
-        // Add this function to fetch city suggestions
+
         async function fetchCitySuggestions(query) {
             const apiKey = '36466fb1f0071875a5b745561750b2e0'; // Replace with your OpenWeatherMap API key
             const url = `http://api.openweathermap.org/geo/1.0/direct?q=${query}&limit=5&appid=${apiKey}`;
@@ -273,7 +274,6 @@
             }
         }
 
-        // Add this function to display suggestions
         function displaySuggestions(suggestions) {
             const suggestionList = document.getElementById('suggestion-list');
             suggestionList.innerHTML = '';
@@ -289,7 +289,10 @@
             });
         }
 
-        // Modify the city input event listener
+        function clearSuggestions() {
+            document.getElementById('suggestion-list').innerHTML = '';
+        }
+
         document.getElementById('city-input').addEventListener('input', function() {
             const query = this.value.trim();
             clearTimeout(autocompleteTimeout);
@@ -300,7 +303,7 @@
                     displaySuggestions(suggestions);
                 }, autocompleteDelay);
             } else {
-                document.getElementById('suggestion-list').innerHTML = '';
+                clearSuggestions();
             }
         });
 
@@ -329,17 +332,28 @@
             forecastElement.insertAdjacentHTML('afterend', hourlyHtml);
         }
 
+        // Update the addCity function
         function addCity() {
             const cityInput = document.getElementById('city-input');
             const city = cityInput.value.trim();
-            if (city && !cities.includes(city)) {
-                cities.push(city);
-                localStorage.setItem('weatherCities', JSON.stringify(cities));
+            if (city) {
+                if (!cities.includes(city)) {
+                    cities.push(city);
+                    localStorage.setItem('weatherCities', JSON.stringify(cities));
+                }
                 cityInput.value = '';
+                clearSuggestions();
                 updateCityList();
                 getWeather(city);
             }
         }
+
+        // Add this to handle clicks outside the suggestion list
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('#city-input') && !event.target.closest('#suggestion-list')) {
+                clearSuggestions();
+            }
+        });
 
         function removeCity(city) {
             cities = cities.filter(c => c !== city);
@@ -534,11 +548,81 @@
             `;
         }
 
-        // Add event listener for Enter key on the input field
+        // Add this function to get the user's current location
+        function getCurrentLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const { latitude, longitude } = position.coords;
+                    fetchCityName(latitude, longitude);
+                }, error => {
+                    console.error("Error getting location:", error);
+                    alert("Unable to retrieve your location. Please ensure location services are enabled.");
+                });
+            } else {
+                alert("Geolocation is not supported by your browser.");
+            }
+        }
+
+        // Add this function to fetch the city name from coordinates
+        async function fetchCityName(latitude, longitude) {
+            const apiKey = '36466fb1f0071875a5b745561750b2e0'; // Replace with your OpenWeatherMap API key
+            const url = `http://api.openweathermap.org/geo/1.0/reverse?lat=${latitude}&lon=${longitude}&limit=1&appid=${apiKey}`;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                if (data.length > 0) {
+                    const cityName = `${data[0].name}, ${data[0].country}`;
+                    document.getElementById('city-input').value = cityName;
+                    addCity();
+                } else {
+                    alert("Unable to determine city name from your location.");
+                }
+            } catch (error) {
+                console.error('Error fetching city name:', error);
+                alert("An error occurred while fetching your city name.");
+            }
+        }
+
+        // Add this event listener for the geolocation button
+        document.getElementById('geolocate-btn').addEventListener('click', getCurrentLocation);
+
+        // Update the addCity function to handle potential duplicates more gracefully
+        function addCity() {
+            const cityInput = document.getElementById('city-input');
+            const city = cityInput.value.trim();
+            if (city) {
+                const cityIndex = cities.findIndex(c => c.toLowerCase() === city.toLowerCase());
+                if (cityIndex === -1) {
+                    cities.push(city);
+                    localStorage.setItem('weatherCities', JSON.stringify(cities));
+                    updateCityList();
+                } else {
+                    // Move the existing city to the top of the list
+                    cities.splice(cityIndex, 1);
+                    cities.unshift(city);
+                    localStorage.setItem('weatherCities', JSON.stringify(cities));
+                    updateCityList();
+                }
+                cityInput.value = '';
+                clearSuggestions();
+                getWeather(city);
+            }
+        }
+
+
+        // Updated event listener for Enter key
         document.getElementById('city-input').addEventListener('keypress', function(event) {
             if (event.key === 'Enter') {
+                event.preventDefault(); // Prevent form submission
                 addCity();
             }
+        });
+
+        // Add this event listener for the submit button
+        document.querySelector('button').addEventListener('click', function(event) {
+            event.preventDefault(); // Prevent form submission
+            addCity();
         });
 
         // Initialize the app
