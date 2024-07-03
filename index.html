@@ -18,6 +18,7 @@
             padding: 20px;
             background-color: var(--background-color);
             color: var(--text-color);
+            line-height: 1.6;
         }
         .container {
             max-width: 1000px;
@@ -58,10 +59,13 @@
             border: none;
             border-radius: 0 5px 5px 0;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: background-color 0.3s, transform 0.1s;
         }
         button:hover {
             background-color: #27ae60;
+        }
+        button:active {
+            transform: scale(0.98);
         }
         #weather-info {
             padding: 20px;
@@ -72,10 +76,14 @@
             justify-content: space-around;
             flex-wrap: wrap;
             margin-bottom: 20px;
+            padding: 20px;
+            background-color: #f0f8ff;
+            border-radius: 10px;
         }
         .weather-icon {
             width: 120px;
             height: 120px;
+            filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.1));
         }
         .temperature {
             font-size: 3.5em;
@@ -93,6 +101,11 @@
             border-radius: 10px;
             text-align: center;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .weather-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
         .forecast {
             display: flex;
@@ -100,6 +113,18 @@
             margin-top: 30px;
             overflow-x: auto;
             padding-bottom: 10px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary-color) #f0f0f0;
+        }
+        .forecast::-webkit-scrollbar {
+            height: 8px;
+        }
+        .forecast::-webkit-scrollbar-track {
+            background: #f0f0f0;
+        }
+        .forecast::-webkit-scrollbar-thumb {
+            background-color: var(--primary-color);
+            border-radius: 20px;
         }
         .forecast-item {
             flex: 0 0 auto;
@@ -109,11 +134,19 @@
             background-color: #e9f5ff;
             border-radius: 10px;
             margin-right: 10px;
+            transition: transform 0.3s;
+        }
+        .forecast-item:hover {
+            transform: scale(1.05);
         }
         .error {
             color: #d32f2f;
             text-align: center;
             font-weight: bold;
+            padding: 10px;
+            background-color: #ffcdd2;
+            border-radius: 5px;
+            margin: 10px 0;
         }
         #air-quality, #astronomy {
             margin-top: 30px;
@@ -151,6 +184,24 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        .toggle-unit {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        @media (max-width: 600px) {
+            .weather-details {
+                grid-template-columns: 1fr;
+            }
+            .current-weather {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
     </style>
 </head>
 <body>
@@ -170,9 +221,9 @@
     </div>
 
     <script>
-        // Global variable to store the weatherInfo element
         const weatherInfo = document.getElementById('weather-info');
         const loader = document.getElementById('loader');
+        let isMetric = true;
 
         async function getWeather() {
             const cityInput = document.getElementById('city-input');
@@ -186,7 +237,7 @@
             weatherInfo.innerHTML = '';
             loader.style.display = 'block';
 
-            const apiKey = 'api key'; // Replace with your own OpenWeatherMap API key(due to security reasons).
+            const apiKey = '36466fb1f0071875a5b745561750b2e0'; // Replace with your OpenWeatherMap API key
             const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
             const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=metric`;
 
@@ -229,7 +280,7 @@
                     <div class="forecast-item">
                         <div>${forecastDate.toLocaleDateString('en-US', { weekday: 'short' })}</div>
                         <img src="${forecastIcon}" alt="${forecast.weather[0].description}" style="width:50px;height:50px;">
-                        <div>${Math.round(forecast.main.temp)}°C</div>
+                        <div class="temperature-display" data-temp="${forecast.main.temp}">${Math.round(forecast.main.temp)}°C</div>
                         <div>${forecast.weather[0].main}</div>
                     </div>
                 `;
@@ -246,8 +297,9 @@
                 <div class="current-weather">
                     <img src="${iconUrl}" alt="${weather[0].description}" class="weather-icon">
                     <div>
-                        <div class="temperature">${Math.round(main.temp)}°C</div>
-                        <div>Feels like ${Math.round(main.feels_like)}°C</div>
+                        <div class="temperature temperature-display" data-temp="${main.temp}">${Math.round(main.temp)}°C</div>
+                        <div>Feels like <span class="temperature-display" data-temp="${main.feels_like}">${Math.round(main.feels_like)}°C</span></div>
+                        <button class="toggle-unit" onclick="toggleTemperatureUnit()">Toggle °C/°F</button>
                     </div>
                     <div>
                         <h2>${name}, ${sys.country}</h2>
@@ -259,22 +311,22 @@
                         <strong>Humidity:</strong> ${main.humidity}%
                     </div>
                     <div class="weather-item">
-                        <strong>Wind:</strong> ${wind.speed} m/s
+                        <strong>Wind:</strong> <span class="wind-speed" data-speed="${wind.speed}">${wind.speed} m/s</span>
                     </div>
                     <div class="weather-item">
                         <strong>Pressure:</strong> ${main.pressure} hPa
                     </div>
                     <div class="weather-item">
-                        <strong>Visibility:</strong> ${visibility / 1000} km
+                        <strong>Visibility:</strong> <span class="visibility" data-visibility="${visibility}">${visibility / 1000} km</span>
                     </div>
                     <div class="weather-item">
                         <strong>Cloudiness:</strong> ${clouds.all}%
                     </div>
                     <div class="weather-item">
-                        <strong>Min Temp:</strong> ${Math.round(main.temp_min)}°C
+                        <strong>Min Temp:</strong> <span class="temperature-display" data-temp="${main.temp_min}">${Math.round(main.temp_min)}°C</span>
                     </div>
                     <div class="weather-item">
-                        <strong>Max Temp:</strong> ${Math.round(main.temp_max)}°C
+                        <strong>Max Temp:</strong> <span class="temperature-display" data-temp="${main.temp_max}">${Math.round(main.temp_max)}°C</span>
                     </div>
                     <div class="weather-item">
                         <strong>Sunrise:</strong> ${sunrise}
@@ -296,6 +348,74 @@
                 </div>
             `;
         }
+
+        function toggleTemperatureUnit() {
+            isMetric = !isMetric;
+            const temperatureDisplays = document.querySelectorAll('.temperature-display');
+            const windSpeedDisplays = document.querySelectorAll('.wind-speed');
+            const visibilityDisplays = document.querySelectorAll('.visibility');
+
+            temperatureDisplays.forEach(display => {
+                const temp = parseFloat(display.dataset.temp);
+                if (isMetric) {
+                    display.textContent = `${Math.round(temp)}°C`;
+                } else {
+                    display.textContent = `${Math.round((temp * 9/5) + 32)}°F`;
+                }
+            });
+
+            windSpeedDisplays.forEach(display => {
+                const speed = parseFloat(display.dataset.speed);
+                if (isMetric) {
+                    display.textContent = `${speed.toFixed(1)} m/s`;
+                } else {
+                    display.textContent = `${(speed * 2.237).toFixed(1)} mph`;
+                }
+            });
+
+            visibilityDisplays.forEach(display => {
+                const visibility = parseFloat(display.dataset.visibility);
+                if (isMetric) {
+                    display.textContent = `${(visibility / 1000).toFixed(1)} km`;
+                } else {
+                    display.textContent = `${(visibility / 1609.34).toFixed(1)} mi`;
+                }
+            });
+        }
+
+        function getWeatherIcon(iconCode) {
+            // Map OpenWeatherMap icon codes to more visually appealing icons
+            const iconMap = {
+                '01d': '☀️', '01n': '🌙', '02d': '⛅', '02n': '☁️',
+                '03d': '☁️', '03n': '☁️', '04d': '☁️', '04n': '☁️',
+                '09d': '🌧️', '09n': '🌧️', '10d': '🌦️', '10n': '🌧️',
+                '11d': '⛈️', '11n': '⛈️', '13d': '❄️', '13n': '❄️',
+                '50d': '🌫️', '50n': '🌫️'
+            };
+            return iconMap[iconCode] || '🌈';
+        }
+
+        function displayError(message) {
+            weatherInfo.innerHTML = `
+                <div class="error">
+                    <p>${message}</p>
+                    <p>Please try again or check your input.</p>
+                </div>
+            `;
+        }
+
+        // Add event listener for Enter key on the input field
+        document.getElementById('city-input').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                getWeather();
+            }
+        });
+
+        // Initialize the app with a default city
+        window.onload = function() {
+            document.getElementById('city-input').value = 'Adelaide';
+            getWeather();
+        };
     </script>
 </body>
 </html>
