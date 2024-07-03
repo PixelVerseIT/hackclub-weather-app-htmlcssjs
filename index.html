@@ -3,32 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weather App</title>
+    <title>Comprehensive Weather App</title>
     <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --background-color: #ecf0f1;
+            --text-color: #34495e;
+            --card-background: #ffffff;
+        }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Arial', sans-serif;
             margin: 0;
             padding: 20px;
-            background-color: #f0f8ff;
-            color: #333;
+            background-color: var(--background-color);
+            color: var(--text-color);
         }
         .container {
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
-            background-color: white;
+            background-color: var(--card-background);
             border-radius: 15px;
             box-shadow: 0 0 20px rgba(0,0,0,0.1);
             overflow: hidden;
         }
         header {
-            background-color: #4a90e2;
+            background-color: var(--primary-color);
             color: white;
             padding: 20px;
             text-align: center;
         }
-        h1 {
+        h1, h2, h3 {
             margin: 0;
-            font-size: 2em;
         }
         .search-container {
             display: flex;
@@ -47,7 +53,7 @@
         button {
             padding: 10px 20px;
             font-size: 16px;
-            background-color: #4CAF50;
+            background-color: var(--secondary-color);
             color: white;
             border: none;
             border-radius: 0 5px 5px 0;
@@ -55,7 +61,7 @@
             transition: background-color 0.3s;
         }
         button:hover {
-            background-color: #45a049;
+            background-color: #27ae60;
         }
         #weather-info {
             padding: 20px;
@@ -64,14 +70,15 @@
             display: flex;
             align-items: center;
             justify-content: space-around;
+            flex-wrap: wrap;
             margin-bottom: 20px;
         }
         .weather-icon {
-            width: 100px;
-            height: 100px;
+            width: 120px;
+            height: 120px;
         }
         .temperature {
-            font-size: 3em;
+            font-size: 3.5em;
             font-weight: bold;
         }
         .weather-details {
@@ -96,7 +103,7 @@
         }
         .forecast-item {
             flex: 0 0 auto;
-            width: 100px;
+            width: 120px;
             text-align: center;
             padding: 10px;
             background-color: #e9f5ff;
@@ -108,25 +115,67 @@
             text-align: center;
             font-weight: bold;
         }
+        #air-quality, #astronomy {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f0f8ff;
+            border-radius: 10px;
+        }
+        .aqi-indicator {
+            width: 100%;
+            height: 10px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .aqi-level {
+            height: 100%;
+            transition: width 0.5s ease-in-out;
+        }
+        #loader {
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+        .loader-spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Weather App</h1>
-            <p>By Hayden Kong</p>
+            <h1>Comprehensive Weather App</h1>
         </header>
         <div class="search-container">
             <input type="text" id="city-input" placeholder="Enter city name">
             <button onclick="getWeather()">Get Weather</button>
         </div>
+        <div id="loader">
+            <div class="loader-spinner"></div>
+            <p>Fetching weather data...</p>
+        </div>
         <div id="weather-info"></div>
     </div>
 
     <script>
+        // Global variable to store the weatherInfo element
+        const weatherInfo = document.getElementById('weather-info');
+        const loader = document.getElementById('loader');
+
         async function getWeather() {
             const cityInput = document.getElementById('city-input');
-            const weatherInfo = document.getElementById('weather-info');
             const city = cityInput.value;
 
             if (!city) {
@@ -134,71 +183,118 @@
                 return;
             }
 
-            const apiKey = '36466fb1f0071875a5b745561750b2e0'; // Replace with your own OpenWeatherMap API key(due to security reasons).
-            const currentWeatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
+            weatherInfo.innerHTML = '';
+            loader.style.display = 'block';
+
+            const apiKey = 'api key'; // Replace with your own OpenWeatherMap API key(due to security reasons).
+            const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
             const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=metric`;
 
             try {
-                const [currentResponse, forecastResponse] = await Promise.all([
-                    fetch(currentWeatherUrl),
+                const [weatherResponse, forecastResponse] = await Promise.all([
+                    fetch(weatherUrl),
                     fetch(forecastUrl)
                 ]);
-                const currentData = await currentResponse.json();
+                const weatherData = await weatherResponse.json();
                 const forecastData = await forecastResponse.json();
 
-                if (currentData.cod === 200 && forecastData.cod === "200") {
-                    const { main, weather, wind, sys, name } = currentData;
-                    const iconUrl = `https://openweathermap.org/img/wn/${weather[0].icon}@2x.png`;
-                    
-                    let forecastHtml = '';
-                    for (let i = 0; i < forecastData.list.length; i += 8) {
-                        const forecast = forecastData.list[i];
-                        const forecastDate = new Date(forecast.dt * 1000);
-                        const forecastIcon = `https://openweathermap.org/img/wn/${forecast.weather[0].icon}.png`;
-                        forecastHtml += `
-                            <div class="forecast-item">
-                                <div>${forecastDate.toLocaleDateString('en-US', { weekday: 'short' })}</div>
-                                <img src="${forecastIcon}" alt="${forecast.weather[0].description}" style="width:50px;height:50px;">
-                                <div>${Math.round(forecast.main.temp)}°C</div>
-                            </div>
-                        `;
-                    }
+                if (weatherData.cod === 200 && forecastData.cod === "200") {
+                    const { coord } = weatherData;
+                    const airQualityUrl = `http://api.openweathermap.org/data/2.5/air_pollution?lat=${coord.lat}&lon=${coord.lon}&appid=${apiKey}`;
+                    const airQualityResponse = await fetch(airQualityUrl);
+                    const airQualityData = await airQualityResponse.json();
 
-                    weatherInfo.innerHTML = `
-                        <div class="current-weather">
-                            <img src="${iconUrl}" alt="${weather[0].description}" class="weather-icon">
-                            <div class="temperature">${Math.round(main.temp)}°C</div>
-                            <div>
-                                <h2>${name}, ${sys.country}</h2>
-                                <p>${weather[0].description}</p>
-                            </div>
-                        </div>
-                        <div class="weather-details">
-                            <div class="weather-item">
-                                <strong>Feels like:</strong> ${Math.round(main.feels_like)}°C
-                            </div>
-                            <div class="weather-item">
-                                <strong>Humidity:</strong> ${main.humidity}%
-                            </div>
-                            <div class="weather-item">
-                                <strong>Wind:</strong> ${wind.speed} m/s
-                            </div>
-                            <div class="weather-item">
-                                <strong>Pressure:</strong> ${main.pressure} hPa
-                            </div>
-                        </div>
-                        <h3>5-Day Forecast</h3>
-                        <div class="forecast">
-                            ${forecastHtml}
-                        </div>
-                    `;
+                    displayWeather(weatherData, forecastData, airQualityData);
                 } else {
-                    throw new Error(currentData.message || forecastData.message || 'City not found');
+                    throw new Error(weatherData.message || forecastData.message || 'City not found');
                 }
             } catch (error) {
                 weatherInfo.innerHTML = `<p class="error">An error occurred: ${error.message}</p>`;
                 console.error('Error:', error);
+            } finally {
+                loader.style.display = 'none';
             }
+        }
+
+        function displayWeather(weatherData, forecastData, airQualityData) {
+            const { main, weather, wind, sys, name, visibility, clouds } = weatherData;
+            const iconUrl = `https://openweathermap.org/img/wn/${weather[0].icon}@4x.png`;
+            
+            let forecastHtml = '';
+            for (let i = 0; i < forecastData.list.length; i += 8) {
+                const forecast = forecastData.list[i];
+                const forecastDate = new Date(forecast.dt * 1000);
+                const forecastIcon = `https://openweathermap.org/img/wn/${forecast.weather[0].icon}.png`;
+                forecastHtml += `
+                    <div class="forecast-item">
+                        <div>${forecastDate.toLocaleDateString('en-US', { weekday: 'short' })}</div>
+                        <img src="${forecastIcon}" alt="${forecast.weather[0].description}" style="width:50px;height:50px;">
+                        <div>${Math.round(forecast.main.temp)}°C</div>
+                        <div>${forecast.weather[0].main}</div>
+                    </div>
+                `;
+            }
+
+            const sunrise = new Date(sys.sunrise * 1000).toLocaleTimeString();
+            const sunset = new Date(sys.sunset * 1000).toLocaleTimeString();
+
+            const aqi = airQualityData.list[0].main.aqi;
+            const aqiLevels = ['Good', 'Fair', 'Moderate', 'Poor', 'Very Poor'];
+            const aqiColors = ['#00e400', '#ffff00', '#ff7e00', '#ff0000', '#8f3f97'];
+
+            weatherInfo.innerHTML = `
+                <div class="current-weather">
+                    <img src="${iconUrl}" alt="${weather[0].description}" class="weather-icon">
+                    <div>
+                        <div class="temperature">${Math.round(main.temp)}°C</div>
+                        <div>Feels like ${Math.round(main.feels_like)}°C</div>
+                    </div>
+                    <div>
+                        <h2>${name}, ${sys.country}</h2>
+                        <p>${weather[0].description}</p>
+                    </div>
+                </div>
+                <div class="weather-details">
+                    <div class="weather-item">
+                        <strong>Humidity:</strong> ${main.humidity}%
+                    </div>
+                    <div class="weather-item">
+                        <strong>Wind:</strong> ${wind.speed} m/s
+                    </div>
+                    <div class="weather-item">
+                        <strong>Pressure:</strong> ${main.pressure} hPa
+                    </div>
+                    <div class="weather-item">
+                        <strong>Visibility:</strong> ${visibility / 1000} km
+                    </div>
+                    <div class="weather-item">
+                        <strong>Cloudiness:</strong> ${clouds.all}%
+                    </div>
+                    <div class="weather-item">
+                        <strong>Min Temp:</strong> ${Math.round(main.temp_min)}°C
+                    </div>
+                    <div class="weather-item">
+                        <strong>Max Temp:</strong> ${Math.round(main.temp_max)}°C
+                    </div>
+                    <div class="weather-item">
+                        <strong>Sunrise:</strong> ${sunrise}
+                    </div>
+                    <div class="weather-item">
+                        <strong>Sunset:</strong> ${sunset}
+                    </div>
+                </div>
+                <div id="air-quality">
+                    <h3>Air Quality</h3>
+                    <p>Air Quality Index: ${aqiLevels[aqi - 1]} (${aqi}/5)</p>
+                    <div class="aqi-indicator">
+                        <div class="aqi-level" style="width: ${aqi * 20}%; background-color: ${aqiColors[aqi - 1]};"></div>
+                    </div>
+                </div>
+                <h3>5-Day Forecast</h3>
+                <div class="forecast">
+                    ${forecastHtml}
+                </div>
+            `;
         }
     </script>
 </body>
