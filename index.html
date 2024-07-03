@@ -193,6 +193,33 @@
             cursor: pointer;
             margin-left: 10px;
         }
+        #city-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+        .city-chip {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .city-chip:hover {
+            background-color: #2980b9;
+        }
+        .city-chip .remove {
+            margin-left: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
         @media (max-width: 600px) {
             .weather-details {
                 grid-template-columns: 1fr;
@@ -211,8 +238,10 @@
         </header>
         <div class="search-container">
             <input type="text" id="city-input" placeholder="Enter city name">
-            <button onclick="getWeather()">Get Weather</button>
+            <ul id="suggestion-list"></ul>
+            <button onclick="addCity()">Add City</button>
         </div>
+        <div id="city-list"></div>
         <div id="loader">
             <div class="loader-spinner"></div>
             <p>Fetching weather data...</p>
@@ -221,14 +250,113 @@
     </div>
 
     <script>
+        let autocompleteTimeout;
+        const autocompleteDelay = 300; // milliseconds
         const weatherInfo = document.getElementById('weather-info');
         const loader = document.getElementById('loader');
+        const cityList = document.getElementById('city-list');
         let isMetric = true;
+        let cities = JSON.parse(localStorage.getItem('weatherCities')) || [];
 
-        async function getWeather() {
+        // Add this function to fetch city suggestions
+        async function fetchCitySuggestions(query) {
+            const apiKey = '36466fb1f0071875a5b745561750b2e0'; // Replace with your OpenWeatherMap API key
+            const url = `http://api.openweathermap.org/geo/1.0/direct?q=${query}&limit=5&appid=${apiKey}`;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                return data.map(city => `${city.name}, ${city.country}`);
+            } catch (error) {
+                console.error('Error fetching city suggestions:', error);
+                return [];
+            }
+        }
+
+        // Add this function to display suggestions
+        function displaySuggestions(suggestions) {
+            const suggestionList = document.getElementById('suggestion-list');
+            suggestionList.innerHTML = '';
+            suggestions.forEach(city => {
+                const li = document.createElement('li');
+                li.textContent = city;
+                li.addEventListener('click', () => {
+                    document.getElementById('city-input').value = city;
+                    suggestionList.innerHTML = '';
+                    addCity();
+                });
+                suggestionList.appendChild(li);
+            });
+        }
+
+        // Modify the city input event listener
+        document.getElementById('city-input').addEventListener('input', function() {
+            const query = this.value.trim();
+            clearTimeout(autocompleteTimeout);
+            
+            if (query.length > 2) {
+                autocompleteTimeout = setTimeout(async () => {
+                    const suggestions = await fetchCitySuggestions(query);
+                    displaySuggestions(suggestions);
+                }, autocompleteDelay);
+            } else {
+                document.getElementById('suggestion-list').innerHTML = '';
+            }
+        });
+
+        // Add a new function to show hourly forecast
+        function showHourlyForecast(startIndex, forecastList) {
+            const hourlyForecast = forecastList.slice(startIndex, startIndex + 8);
+            let hourlyHtml = '<h3>Hourly Forecast</h3><div class="hourly-forecast">';
+            
+            hourlyForecast.forEach(hour => {
+                const hourTime = new Date(hour.dt * 1000).toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
+                hourlyHtml += `
+                    <div class="hourly-item">
+                        <div>${hourTime}</div>
+                        <img src="https://openweathermap.org/img/wn/${hour.weather[0].icon}.png" alt="${hour.weather[0].description}" style="width:30px;height:30px;">
+                        <div class="temperature-display" data-temp="${hour.main.temp}">${Math.round(hour.main.temp)}°C</div>
+                        <div>Precipitation: ${(hour.pop * 100).toFixed(0)}%</div>
+                        <div>Wind: ${hour.wind.speed.toFixed(1)} m/s</div>
+                    </div>
+                `;
+            });
+            
+            hourlyHtml += '</div>';
+            
+            // Insert the hourly forecast below the daily forecast
+            const forecastElement = document.querySelector('.forecast');
+            forecastElement.insertAdjacentHTML('afterend', hourlyHtml);
+        }
+
+        function addCity() {
             const cityInput = document.getElementById('city-input');
-            const city = cityInput.value;
+            const city = cityInput.value.trim();
+            if (city && !cities.includes(city)) {
+                cities.push(city);
+                localStorage.setItem('weatherCities', JSON.stringify(cities));
+                cityInput.value = '';
+                updateCityList();
+                getWeather(city);
+            }
+        }
 
+        function removeCity(city) {
+            cities = cities.filter(c => c !== city);
+            localStorage.setItem('weatherCities', JSON.stringify(cities));
+            updateCityList();
+        }
+
+        function updateCityList() {
+            cityList.innerHTML = cities.map(city => `
+                <div class="city-chip" onclick="getWeather('${city}')">
+                    ${city}
+                    <span class="remove" onclick="event.stopPropagation(); removeCity('${city}')">×</span>
+                </div>
+            `).join('');
+        }
+
+        async function getWeather(city) {
             if (!city) {
                 weatherInfo.innerHTML = '<p class="error">Please enter a city name.</p>';
                 return;
@@ -277,11 +405,13 @@
                 const forecastDate = new Date(forecast.dt * 1000);
                 const forecastIcon = `https://openweathermap.org/img/wn/${forecast.weather[0].icon}.png`;
                 forecastHtml += `
-                    <div class="forecast-item">
+                    <div class="forecast-item" onclick="showHourlyForecast(${i}, ${JSON.stringify(forecastData.list)})">
                         <div>${forecastDate.toLocaleDateString('en-US', { weekday: 'short' })}</div>
                         <img src="${forecastIcon}" alt="${forecast.weather[0].description}" style="width:50px;height:50px;">
                         <div class="temperature-display" data-temp="${forecast.main.temp}">${Math.round(forecast.main.temp)}°C</div>
                         <div>${forecast.weather[0].main}</div>
+                        <div>Precipitation: ${(forecast.pop * 100).toFixed(0)}%</div>
+                        <div>Wind: ${forecast.wind.speed.toFixed(1)} m/s</div>
                     </div>
                 `;
             }
@@ -407,14 +537,16 @@
         // Add event listener for Enter key on the input field
         document.getElementById('city-input').addEventListener('keypress', function(event) {
             if (event.key === 'Enter') {
-                getWeather();
+                addCity();
             }
         });
 
-        // Initialize the app with a default city
+        // Initialize the app
         window.onload = function() {
-            document.getElementById('city-input').value = 'Adelaide';
-            getWeather();
+            updateCityList();
+            if (cities.length > 0) {
+                getWeather(cities[0]);
+            }
         };
     </script>
 </body>
