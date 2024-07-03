@@ -44,6 +44,8 @@
                 <canvas id="temperatureChart"></canvas>
             </div>
         </div>
+        <button class="mode-toggle" onclick="toggleDarkMode()">🌓</button>
+
         
     </div>
 
@@ -62,6 +64,7 @@
         const cityList = document.getElementById('city-list');
         let isMetric = true;
         let cities = JSON.parse(localStorage.getItem('weatherCities')) || [];
+        let isDarkMode = localStorage.getItem('darkMode') === 'true';
 
 
         async function fetchCitySuggestions(query) {
@@ -110,6 +113,28 @@
                 clearSuggestions();
             }
         });
+
+        if (isDarkMode) {
+            document.body.classList.add('dark-mode');
+        }
+
+        function toggleDarkMode() {
+            isDarkMode = !isDarkMode;
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('darkMode', isDarkMode);
+            updateChartColors();
+        }
+
+        function updateChartColors() {
+            const chart = Chart.getChart("temperatureChart");
+            if (chart) {
+                chart.options.scales.x.ticks.color = isDarkMode ? '#f0f0f0' : '#333';
+                chart.options.scales.y.ticks.color = isDarkMode ? '#f0f0f0' : '#333';
+                chart.options.plugins.legend.labels.color = isDarkMode ? '#f0f0f0' : '#333';
+                chart.update();
+            }
+        }
+
 
         // Add a new function to show hourly forecast
         function showHourlyForecast(startIndex, forecastList) {
@@ -230,6 +255,7 @@
             L.marker([lat, lon]).addTo(map);
         }
 
+        // Update the createTemperatureChart function
         function createTemperatureChart(forecastData) {
             const ctx = document.getElementById('temperatureChart').getContext('2d');
             const labels = forecastData.list.slice(0, 8).map(item => new Date(item.dt * 1000).toLocaleTimeString('en-US', { hour: 'numeric', hour12: true }));
@@ -257,11 +283,15 @@
                             text: '24-Hour Temperature Forecast',
                             font: {
                                 size: 18
-                            }
+                            },
+                            color: isDarkMode ? '#f0f0f0' : '#333'
                         },
                         legend: {
                             display: true,
                             position: 'top',
+                            labels: {
+                                color: isDarkMode ? '#f0f0f0' : '#333'
+                            }
                         }
                     },
                     scales: {
@@ -272,7 +302,11 @@
                                 text: 'Temperature (°C)',
                                 font: {
                                     size: 14
-                                }
+                                },
+                                color: isDarkMode ? '#f0f0f0' : '#333'
+                            },
+                            ticks: {
+                                color: isDarkMode ? '#f0f0f0' : '#333'
                             }
                         },
                         x: {
@@ -281,7 +315,11 @@
                                 text: 'Time',
                                 font: {
                                     size: 14
-                                }
+                                },
+                                color: isDarkMode ? '#f0f0f0' : '#333'
+                            },
+                            ticks: {
+                                color: isDarkMode ? '#f0f0f0' : '#333'
                             }
                         }
                     }
