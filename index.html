@@ -3,253 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weather App</title>
-    <style>
-        :root {
-            --primary-color: #3498db;
-            --secondary-color: #2ecc71;
-            --background-color: #ecf0f1;
-            --text-color: #34495e;
-            --card-background: #ffffff;
-        }
-        body {
-            font-family: 'Arial', sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: var(--background-color);
-            color: var(--text-color);
-            line-height: 1.6;
-        }
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            background-color: var(--card-background);
-            border-radius: 15px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        header {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-        h1, h2, h3 {
-            margin: 0;
-        }
-        .search-container {
-            display: flex;
-            justify-content: center;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        #city-input {
-            padding: 10px;
-            font-size: 16px;
-            border: 1px solid #ddd;
-            border-radius: 5px 0 0 5px;
-            width: 70%;
-            max-width: 300px;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            background-color: var(--secondary-color);
-            color: white;
-            border: none;
-            border-radius: 0 5px 5px 0;
-            cursor: pointer;
-            transition: background-color 0.3s, transform 0.1s;
-        }
-        button:hover {
-            background-color: #27ae60;
-        }
-        button:active {
-            transform: scale(0.98);
-        }
-        #weather-info {
-            padding: 20px;
-        }
-        .current-weather {
-            display: flex;
-            align-items: center;
-            justify-content: space-around;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-            padding: 20px;
-            background-color: #f0f8ff;
-            border-radius: 10px;
-        }
-        .weather-icon {
-            width: 120px;
-            height: 120px;
-            filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.1));
-        }
-        .temperature {
-            font-size: 3.5em;
-            font-weight: bold;
-        }
-        .weather-details {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }
-        .weather-item {
-            background-color: #f9f9f9;
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-        .weather-item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        .forecast {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 30px;
-            overflow-x: auto;
-            padding-bottom: 10px;
-            scrollbar-width: thin;
-            scrollbar-color: var(--primary-color) #f0f0f0;
-        }
-        .forecast::-webkit-scrollbar {
-            height: 8px;
-        }
-        .forecast::-webkit-scrollbar-track {
-            background: #f0f0f0;
-        }
-        .forecast::-webkit-scrollbar-thumb {
-            background-color: var(--primary-color);
-            border-radius: 20px;
-        }
-        .forecast-item {
-            flex: 0 0 auto;
-            width: 120px;
-            text-align: center;
-            padding: 10px;
-            background-color: #e9f5ff;
-            border-radius: 10px;
-            margin-right: 10px;
-            transition: transform 0.3s;
-        }
-        .forecast-item:hover {
-            transform: scale(1.05);
-        }
-        .error {
-            color: #d32f2f;
-            text-align: center;
-            font-weight: bold;
-            padding: 10px;
-            background-color: #ffcdd2;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
-        #air-quality, #astronomy {
-            margin-top: 30px;
-            padding: 20px;
-            background-color: #f0f8ff;
-            border-radius: 10px;
-        }
-        .aqi-indicator {
-            width: 100%;
-            height: 10px;
-            background-color: #e0e0e0;
-            border-radius: 5px;
-            overflow: hidden;
-            margin-top: 10px;
-        }
-        .aqi-level {
-            height: 100%;
-            transition: width 0.5s ease-in-out;
-        }
-        #loader {
-            text-align: center;
-            padding: 20px;
-            display: none;
-        }
-        .loader-spinner {
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid var(--primary-color);
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .toggle-unit {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-left: 10px;
-        }
-        #city-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 20px;
-            padding: 10px;
-            background-color: #f0f0f0;
-            border-radius: 5px;
-        }
-        .city-chip {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 5px 10px;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .city-chip:hover {
-            background-color: #2980b9;
-        }
-        .city-chip .remove {
-            margin-left: 5px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        @media (max-width: 600px) {
-            .weather-details {
-                grid-template-columns: 1fr;
-            }
-            .current-weather {
-                flex-direction: column;
-                text-align: center;
-            }
-        }
+    <title>Weather App | Hayden Kong</title>
+    <meta name="description" content="A simple Weather App in HTML CSS and JS. Powered by the OpenWeatherMap API. Free to use!">
+    <link rel="icon" href="logo.png" type="image/x-icon">
 
-        #geolocate-btn {
-            background-color: var(--secondary-color);
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            margin-left: 5px;
-        }
-        #geolocate-btn:hover {
-            background-color: #27ae60;
-        }
+    <!-- iOS Web App tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="apple-touch-icon" href="logo.png">
+    <link rel="apple-touch-startup-image" href="logo.png">
 
-        #weather-map, #temperatureChart {
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-    </style>
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Third Party JS and CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -258,6 +25,7 @@
     <div class="container">
         <header>
             <h1>Weather App</h1>
+            <p>By Hayden Kong</p>
         </header>
         <div class="search-container">
             <input type="text" id="city-input" placeholder="Enter city name">
@@ -272,12 +40,21 @@
         </div>
         <div id="weather-info">
             <div id="weather-map" style="height: 400px; width: 100%; margin-top: 20px;"></div>
-            <canvas id="temperatureChart" style="width:100%; max-width:600px; margin-top: 20px;"></canvas>
+            <div style="width: 100%; max-width: 800px; margin: 20px auto;">
+                <canvas id="temperatureChart"></canvas>
+            </div>
         </div>
         
     </div>
 
     <script>
+        // 
+        // This is the free API key from OpenWeatherMap.
+        // You can bring your own API key by signing up at https://home.openweathermap.org/users/sign_up
+        // 
+          const OPENWEATHERAPIKEY = '36466fb1f0071875a5b745561750b2e0'
+        // 
+        // 
         let autocompleteTimeout;
         const autocompleteDelay = 300; // milliseconds
         const weatherInfo = document.getElementById('weather-info');
@@ -288,7 +65,7 @@
 
 
         async function fetchCitySuggestions(query) {
-            const apiKey = '36466fb1f0071875a5b745561750b2e0'; // Replace with your OpenWeatherMap API key
+            const apiKey = OPENWEATHERAPIKEY;
             const url = `http://api.openweathermap.org/geo/1.0/direct?q=${query}&limit=5&appid=${apiKey}`;
             
             try {
@@ -407,7 +184,7 @@
             loader.style.display = 'block';
             
 
-            const apiKey = '36466fb1f0071875a5b745561750b2e0'; // Replace with your OpenWeatherMap API key
+            const apiKey = OPENWEATHERAPIKEY;
             const mapUrl = `https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=${apiKey}`;
             const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
             const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=metric`;
@@ -446,7 +223,7 @@
             }
 
             const map = L.map('weather-map').setView([lat, lon], 10);
-            const apiKey = '36466fb1f0071875a5b745561750b2e0'; // Replace with your OpenWeatherMap API key
+            const apiKey = OPENWEATHERAPIKEY;
             const mapUrl = `https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=${apiKey}`;
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
             L.tileLayer(mapUrl).addTo(map);
@@ -454,24 +231,59 @@
         }
 
         function createTemperatureChart(forecastData) {
+            const ctx = document.getElementById('temperatureChart').getContext('2d');
             const labels = forecastData.list.slice(0, 8).map(item => new Date(item.dt * 1000).toLocaleTimeString('en-US', { hour: 'numeric', hour12: true }));
             const temperatures = forecastData.list.slice(0, 8).map(item => item.main.temp);
 
-            new Chart("temperatureChart", {
-                type: "line",
+            new Chart(ctx, {
+                type: 'line',
                 data: {
                     labels: labels,
                     datasets: [{
+                        label: 'Temperature',
                         data: temperatures,
-                        borderColor: "red",
-                        fill: false
+                        borderColor: 'rgb(255, 99, 132)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.1
                     }]
                 },
                 options: {
-                    legend: {display: false},
-                    title: {
-                        display: true,
-                        text: "Temperature Forecast (Next 24 Hours)"
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '24-Hour Temperature Forecast',
+                            font: {
+                                size: 18
+                            }
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'Temperature (°C)',
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time',
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        }
                     }
                 }
             });
@@ -518,6 +330,7 @@
                         <p>${weather[0].description}</p>
                     </div>
                 </div>
+
                 <div class="weather-details">
                     <div class="weather-item">
                         <strong>Humidity:</strong> ${main.humidity}%
@@ -547,6 +360,7 @@
                         <strong>Sunset:</strong> ${sunset}
                     </div>
                 </div>
+
                 <div id="air-quality">
                     <h3>Air Quality</h3>
                     <p>Air Quality Index: ${aqiLevels[aqi - 1]} (${aqi}/5)</p>
@@ -558,8 +372,12 @@
                 <div class="forecast">
                     ${forecastHtml}
                 </div>
-                 <div id="weather-map" style="height: 400px; width: 100%; margin-top: 20px;"></div>
-                <canvas id="temperatureChart" style="width:100%; max-width:600px; margin-top: 20px;"></canvas>
+                
+                <div id="weather-map" style="height: 400px; width: 100%; margin-top: 10px; margin-bottom: 20px;"></div>
+                <h3 class="temp-forecast-header">Temperature Forecast</h3>
+                <div style="width: 100%; max-width: 800px; margin: 10px auto;">
+                    <canvas id="temperatureChart"></canvas>
+                </div>
             `;
             initMap(weatherData.coord.lat, weatherData.coord.lon);
             createTemperatureChart(forecastData);
@@ -570,6 +388,8 @@
                 createTemperatureChart(forecastData);
             }, 0);
         }
+
+
 
         function toggleTemperatureUnit() {
             isMetric = !isMetric;
@@ -603,7 +423,20 @@
                     display.textContent = `${(visibility / 1609.34).toFixed(1)} mi`;
                 }
             });
+
+            // Update the chart
+            const chart = Chart.getChart("temperatureChart");
+            if (chart) {
+                const newTemps = chart.data.datasets[0].data.map(temp => 
+                    isMetric ? temp : (temp * 9/5) + 32
+                );
+                chart.data.datasets[0].data = newTemps;
+                chart.options.scales.y.title.text = `Temperature (${isMetric ? '°C' : '°F'})`;
+                chart.update();
+            }
         }
+
+
 
         function getWeatherIcon(iconCode) {
             // Map OpenWeatherMap icon codes to more visually appealing icons
@@ -643,7 +476,7 @@
 
         // Add this function to fetch the city name from coordinates
         async function fetchCityName(latitude, longitude) {
-            const apiKey = '36466fb1f0071875a5b745561750b2e0'; // Replace with your OpenWeatherMap API key
+            const apiKey = OPENWEATHERAPIKEY;
             const url = `http://api.openweathermap.org/geo/1.0/reverse?lat=${latitude}&lon=${longitude}&limit=1&appid=${apiKey}`;
             
             try {
